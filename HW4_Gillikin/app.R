@@ -41,15 +41,17 @@ ui <- fluidPage(
       selectInput("department_select",
                   "Department",
                   choices = departments,
-                  selected = "Potholes")
+                  selected = "Parks and Recreation")
     ),
     
     # Tabset Main Panel
     mainPanel(
       tabsetPanel(
-        tabPanel("Line Plot",
-                 plotlyOutput("linePlot")
+        # TBD
+        tabPanel("Bar Plot",
+                 plotlyOutput("barPlot")
         ),
+        # TBD
         tabPanel("Open/Closed",
                  plotlyOutput("barChart")),
         # Data Table
@@ -72,12 +74,11 @@ server <- function(input, output) {
     
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
-      mutate(date = as.Date(general_ledger_date),
-             STATUS = ifelse(STATUS == 1, "Closed", "Open"))
+      mutate(date = as.Date(general_ledger_date))
     
     return(dataAccount)
   })
-  output$linePlot <- renderPlotly({
+  output$barPlot <- renderPlotly({
     dataAccount <- loadAcount()
     
     # shape the data for chart
@@ -87,9 +88,7 @@ server <- function(input, output) {
     
     # draw plot
     ggplot(table, aes(x = date, y = count)) +
-      geom_point(colour = "#d95f02") +
-      geom_line(colour = "#d95f02") +
-      geom_smooth()
+      geom_bar()
   })
   output$barChart <- renderPlotly({
     dataAccount <- loadAccount()
