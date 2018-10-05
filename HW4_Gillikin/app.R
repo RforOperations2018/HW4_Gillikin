@@ -23,24 +23,24 @@ ckanUniques <- function(id, field) {
   c(ckanSQL(URLencode(url)))
 }
 
-types <- sort(ckanUniques("76fda9d0-69be-4dd5-8108-0de7907fc5a4", "REQUEST_TYPE")$REQUEST_TYPE)
+departments <- sort(ckanUniques("f61f6e8c-7b93-4df3-9935-4937899901c7", "department_name")$department_name)
 
 # Define UI for application
 ui <- fluidPage(
   
   # Application title
-  titlePanel("City of Pittsburgh 311 Dashboard"),
+  titlePanel("Pittsburgh Revenues and Expenses"),
   
   # Sidebar
   sidebarLayout(
     sidebarPanel(
       dateRangeInput("dates",
-                     "Select Dates",
+                     "Dates",
                      start = Sys.Date()-30,
                      end = Sys.Date()),
-      selectInput("type_select",
-                  "Request Type",
-                  choices = types,
+      selectInput("department_select",
+                  "Department",
+                  choices = departments,
                   selected = "Potholes")
     ),
     
@@ -59,22 +59,22 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output) {
-  load311 <- reactive({
+  loadAccount <- reactive({
     # Build API Query with proper encodes
-    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%2276fda9d0-69be-4dd5-8108-0de7907fc5a4%22%20WHERE%20%22CREATED_ON%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22CREATED_ON%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22REQUEST_TYPE%22%20=%20%27", input$type_select, "%27")
+    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
     
     # Load and clean data
-    dat311 <- ckanSQL(url) %>%
-      mutate(date = as.Date(CREATED_ON),
+    dataAccount <- ckanSQL(url) %>%
+      mutate(date = as.Date(general_ledger_date),
              STATUS = ifelse(STATUS == 1, "Closed", "Open"))
     
-    return(dat311)
+    return(dataAccount)
   })
   output$linePlot <- renderPlotly({
-    dat311 <- load311()
+    dataAccount <- loadAcount()
     
     # shape the data for chart
-    table <- dat311 %>%
+    table <- dataAccount %>%
       group_by(date) %>%
       summarise(count = n())
     
@@ -85,10 +85,10 @@ server <- function(input, output) {
       geom_smooth()
   })
   output$barChart <- renderPlotly({
-    dat311 <- load311()
+    dataAccount <- loadAccount()
     
     # shape the data for chart
-    table <- dat311 %>%
+    table <- dataAccount %>%
       group_by(STATUS) %>%
       summarise(count = n())
     
