@@ -38,29 +38,22 @@ ui <- fluidPage(
                      "Dates",
                      start = Sys.Date()-30,
                      end = Sys.Date()),
-      #selectInput("department_select",
-     #             "Department",
-     #             choices = departments,
-     #             selected = "Parks and Recreation"),
       selectInput("department_select",
-                  "Destination",
+                  "Department",
                   choices = departments,
-                  multiple = TRUE,
-                  selectize = TRUE,
-                  selected = c("Parks and Recreation"))
+                  selected = "Parks and Recreation")
     ),
     
     # Tabset Main Panel
     mainPanel(
       tabsetPanel(
         # TBD
-        tabPanel("Bar Plot",
-                 plotlyOutput("barPlot")
+        tabPanel("Line Plot",
+                 plotlyOutput("linePlot")
         ),
         # TBD
-        #tabPanel("Open/Closed",
-        #         plotlyOutput("barChart")
-        #),
+        tabPanel("Open/Closed",
+                 plotlyOutput("barChart")),
         # Data Table
         tabPanel("Table",
                  inputPanel(
@@ -81,45 +74,24 @@ server <- function(input, output) {
     
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
-      mutate(date = as.Date(general_ledger_date))
-    
-    if (length(input$department_select) > 0 ) {
-      dataAccount <- subset(dataAccount, department_name %in% input$department_select)
-    }
+      mutate(date = as.Date(general_ledger_date),
+             STATUS = ifelse(STATUS == 1, "Closed", "Open"))
     
     return(dataAccount)
   })
-  
-  loadAccount <- reactive({
-    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
-    
-    
-    dataAccount <- ckanSQL(url)
-    
-    if (length(input$destinationSelect) > 0 ) {
-      flights <- subset(flights, destination %in% input$destinationSelect)
-    }
-    return(flights)
-  })
-  
-  
-  
-  
-  
-  output$barPlot <- renderPlotly({
+  output$linePlot <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
-   # table <- dataAccount %>%
-   #   group_by(date) %>%
-   #   summarise(count = n())
-    
-    
-  dat <- loadAccount()
+    table <- dataAccount %>%
+      group_by(date) %>%
+      summarise(count = n())
     
     # draw plot
-    ggplot(data = dat , aes(x = date)) +
-      geom_bar()
+    ggplot(table, aes(x = date, y = count)) +
+      geom_point(colour = "#d95f02") +
+      geom_line(colour = "#d95f02") +
+      geom_smooth()
   })
   output$barChart <- renderPlotly({
     dataAccount <- loadAccount()
