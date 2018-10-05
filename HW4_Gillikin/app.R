@@ -55,7 +55,7 @@ ui <- fluidPage(
         # Data Table
         tabPanel("Table",
                  inputPanel(
-                   downloadButton("downloadData","Download Flight Data")
+                   downloadButton("downloadData","Download Revenue/Expense Data")
                  ),
                  fluidPage(DT::dataTableOutput("table"))
         )
@@ -103,6 +103,18 @@ server <- function(input, output) {
     ggplot(table, aes(x = STATUS, y = count, fill = STATUS)) +
       geom_bar(stat = "identity")
   })
+  # Datatable
+  output$table <- DT::renderDataTable({
+    subset(loadAccount(), select = c(department_name))
+  })
+  # Download data in the datatable
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("revenue.expenses-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(fdInput(), file)
+    })
 }
 
 # Run the application 
