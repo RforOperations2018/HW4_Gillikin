@@ -75,7 +75,7 @@ server <- function(input, output) {
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date),
-             STATUS = ifelse(STATUS == 1, "Closed", "Open"))
+             object_account_description = ifelse(object_account_description == "TOOLS", "Closed", "Open"))
     
     return(dataAccount)
   })
@@ -98,11 +98,11 @@ server <- function(input, output) {
     
     # shape the data for chart
     table <- dataAccount %>%
-      group_by(STATUS) %>%
+      group_by(object_account_description) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = STATUS, y = count, fill = STATUS)) +
+    ggplot(table, aes(x = object_account_description, y = count, fill = object_account_description)) +
       geom_bar(stat = "identity")
   })
   # Datatable
