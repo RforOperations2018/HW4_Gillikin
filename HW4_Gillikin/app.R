@@ -51,7 +51,14 @@ ui <- fluidPage(
                  plotlyOutput("linePlot")
         ),
         tabPanel("Open/Closed",
-                 plotlyOutput("barChart"))
+                 plotlyOutput("barChart")),
+        # Data Table
+        tabPanel("Table",
+                 inputPanel(
+                   downloadButton("downloadData","Download Flight Data")
+                 ),
+                 fluidPage(DT::dataTableOutput("table"))
+        )
       )
     )
   )
