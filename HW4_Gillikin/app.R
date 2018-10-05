@@ -1,48 +1,101 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+#Homework 4
 
 library(shiny)
+library(httr)
+library(jsonlite)
+library(plotly)
+library(htmltools)
 
-# Define UI for application that draws a histogram
+ckanSQL <- function(url) {
+  # Make the Request
+  r <- RETRY("GET", URLencode(url))
+  # Extract Content
+  c <- content(r, "text")
+  # Basic gsub to make NA's consistent with R
+  json <- gsub('NaN', 'NA', c, perl = TRUE)
+  # Create Dataframe
+  data.frame(jsonlite::fromJSON(json)$result$records)
+}
+
+# Unique values for Resource Field
+ckanUniques <- function(id, field) {
+  url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20DISTINCT(%22", field, "%22)%20from%20%22", id, "%22")
+  c(ckanSQL(URLencode(url)))
+}
+
+types <- sort(ckanUniques("76fda9d0-69be-4dd5-8108-0de7907fc5a4", "REQUEST_TYPE")$REQUEST_TYPE)
+
+# Define UI for application
 ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
-      ),
-      
-      # Show a plot of the generated distribution
-      mainPanel(
-         plotOutput("distPlot")
+  
+  # Application title
+  titlePanel("City of Pittsburgh 311 Dashboard"),
+  
+  # Sidebar
+  sidebarLayout(
+    sidebarPanel(
+      dateRangeInput("dates",
+                     "Select Dates",
+                     start = Sys.Date()-30,
+                     end = Sys.Date()),
+      selectInput("type_select",
+                  "Request Type",
+                  choices = types,
+                  selected = "Potholes")
+    ),
+    
+    # Tabset Main Panel
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Line Plot",
+                 plotlyOutput("linePlot")
+        ),
+        tabPanel("Open/Closed",
+                 plotlyOutput("barChart"))
       )
-   )
+    )
+  )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic
 server <- function(input, output) {
-   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
+  load311 <- reactive({
+    # Build API Query with proper encodes
+    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%2276fda9d0-69be-4dd5-8108-0de7907fc5a4%22%20WHERE%20%22CREATED_ON%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22CREATED_ON%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22REQUEST_TYPE%22%20=%20%27", input$type_select, "%27")
+    
+    # Load and clean data
+    dat311 <- ckanSQL(url) %>%
+      mutate(date = as.Date(CREATED_ON),
+             STATUS = ifelse(STATUS == 1, "Closed", "Open"))
+    
+    return(dat311)
+  })
+  output$linePlot <- renderPlotly({
+    dat311 <- load311()
+    
+    # shape the data for chart
+    table <- dat311 %>%
+      group_by(date) %>%
+      summarise(count = n())
+    
+    # draw plot
+    ggplot(table, aes(x = date, y = count)) +
+      geom_point(colour = "#d95f02") +
+      geom_line(colour = "#d95f02") +
+      geom_smooth()
+  })
+  output$barChart <- renderPlotly({
+    dat311 <- load311()
+    
+    # shape the data for chart
+    table <- dat311 %>%
+      group_by(STATUS) %>%
+      summarise(count = n())
+    
+    # draw plot
+    ggplot(table, aes(x = STATUS, y = count, fill = STATUS)) +
+      geom_bar(stat = "identity")
+  })
 }
 
 # Run the application 
