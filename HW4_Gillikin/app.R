@@ -41,7 +41,7 @@ ui <- fluidPage(
       selectInput("department_select",
                   "Department",
                   choices = departments,
-                  selected = "Parks and Recreation")
+                  selected = "DPW-Operations")
     ),
     
     # Tabset Main Panel
