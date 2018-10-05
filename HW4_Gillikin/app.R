@@ -38,10 +38,16 @@ ui <- fluidPage(
                      "Dates",
                      start = Sys.Date()-30,
                      end = Sys.Date()),
+      #selectInput("department_select",
+     #             "Department",
+     #             choices = departments,
+     #             selected = "Parks and Recreation"),
       selectInput("department_select",
-                  "Department",
+                  "Destination",
                   choices = departments,
-                  selected = "Parks and Recreation")
+                  multiple = TRUE,
+                  selectize = TRUE,
+                  selected = c("Parks and Recreation"))
     ),
     
     # Tabset Main Panel
@@ -52,8 +58,9 @@ ui <- fluidPage(
                  plotlyOutput("barPlot")
         ),
         # TBD
-        tabPanel("Open/Closed",
-                 plotlyOutput("barChart")),
+        #tabPanel("Open/Closed",
+        #         plotlyOutput("barChart")
+        #),
         # Data Table
         tabPanel("Table",
                  inputPanel(
@@ -76,18 +83,42 @@ server <- function(input, output) {
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date))
     
+    if (length(input$department_select) > 0 ) {
+      dataAccount <- subset(dataAccount, department_name %in% input$department_select)
+    }
+    
     return(dataAccount)
   })
+  
+  loadAccount <- reactive({
+    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
+    
+    
+    dataAccount <- ckanSQL(url)
+    
+    if (length(input$destinationSelect) > 0 ) {
+      flights <- subset(flights, destination %in% input$destinationSelect)
+    }
+    return(flights)
+  })
+  
+  
+  
+  
+  
   output$barPlot <- renderPlotly({
-    dataAccount <- loadAcount()
+    dataAccount <- loadAccount()
     
     # shape the data for chart
-    table <- dataAccount %>%
-      group_by(date) %>%
-      summarise(count = n())
+   # table <- dataAccount %>%
+   #   group_by(date) %>%
+   #   summarise(count = n())
+    
+    
+  dat <- loadAccount()
     
     # draw plot
-    ggplot(table, aes(x = date, y = count)) +
+    ggplot(data = dat , aes(x = date)) +
       geom_bar()
   })
   output$barChart <- renderPlotly({
