@@ -41,7 +41,8 @@ ui <- fluidPage(
       selectInput("department_select",
                   "Department",
                   choices = departments,
-                  selected = "DPW-Operations")
+                  selected = "DPW-Operations"),
+      actionButton("reset", "Reset Selection", icon = icon("refresh"))
     ),
     
     # Tabset Main Panel
@@ -67,7 +68,7 @@ ui <- fluidPage(
 )
 
 # Define server logic
-server <- function(input, output) {
+server <- function(input, output, session = session) {
   loadAccount <- reactive({
     # Build API Query with proper encodes
     url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
@@ -107,7 +108,12 @@ server <- function(input, output) {
   })
   # Datatable
   output$table <- DT::renderDataTable({
-    subset(loadAccount(), select = c(department_name))
+    subset(loadAccount(), select = c(department_name, general_ledger_date, amount))
+  })
+  # Reset Selection of Data
+  observeEvent(input$reset, {
+    updateSelectInput(session, "department_select", selected = c("DPW-Operations"))
+    showNotification("Loading...", type = "message")
   })
   # Download data in the datatable
   output$downloadData <- downloadHandler(
@@ -115,7 +121,7 @@ server <- function(input, output) {
       paste("revenue.expenses-", Sys.Date(), ".csv", sep="")
     },
     content = function(file) {
-      write.csv(fdInput(), file)
+      write.csv(loadAccount(), file)
     })
 }
 
