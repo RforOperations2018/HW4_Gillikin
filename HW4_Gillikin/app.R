@@ -50,11 +50,13 @@ ui <- fluidPage(
       tabsetPanel(
         # TBD
         tabPanel("Line Plot",
-                 plotlyOutput("linePlot")
-        ),
+                 plotlyOutput("linePlot")),
         # TBD
         tabPanel("Open/Closed",
                  plotlyOutput("barChart")),
+        # TBD
+        tabPanel("Money",
+                 plotlyOutput("scatterChart")),
         # Data Table
         tabPanel("Table",
                  inputPanel(
@@ -95,6 +97,18 @@ server <- function(input, output, session = session) {
       geom_smooth()
   })
   output$barChart <- renderPlotly({
+    dataAccount <- loadAccount()
+    
+    # shape the data for chart
+    table <- dataAccount %>%
+      group_by(object_account_description) %>%
+      summarise(count = n())
+    
+    # draw plot
+    ggplot(table, aes(x = object_account_description, y = count, fill = object_account_description)) +
+      geom_bar(stat = "identity")
+  })
+  output$scatterChart <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
