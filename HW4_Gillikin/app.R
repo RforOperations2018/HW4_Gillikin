@@ -50,6 +50,7 @@ ui <- fluidPage(
                   selected = "DPW-Operations"),
       #Turning on multiple = TRUE threw an error, so I wanted to make it compare to one other department
       #I wasn't able to figure out how to have this second option
+      # In the future then, just delete it from the UI.
       selectInput("department_select2",
                   "Comparison Department",
                   choices = departments,
@@ -83,6 +84,7 @@ ui <- fluidPage(
 server <- function(input, output, session = session) {
   loadAccount <- reactive({
     # Build API Query with proper encodes
+    # You would have wanted an OR statement wrapped in parenthesis () for both of your department selects to work, or an IN statement: https://www.w3schools.com/sql/sql_in.asp
     url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27") #%20AND20%22amount%22%20%3E=%20%27", input$amount_select[1], "%27%20AND%20%22amount%22%20%3C=%20%27", input$amount_select[2], "%27")
     
     # Load and clean data
