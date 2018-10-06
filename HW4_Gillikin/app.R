@@ -42,7 +42,13 @@ ui <- fluidPage(
                   "Department",
                   choices = departments,
                   selected = "DPW-Operations"),
+      sliderInput("amount_select",
+                  "Amount:",
+                  min = -500,
+                  max = 500,
+                  value = c(-500, 500)),
       actionButton("reset", "Reset Selection", icon = icon("refresh"))
+      
     ),
     
     # Tabset Main Panel
