@@ -36,7 +36,7 @@ ui <- fluidPage(
     sidebarPanel(
       dateRangeInput("dates",
                      "Dates",
-                     start = Sys.Date()-14,
+                     start = Sys.Date()-60,
                      end = Sys.Date()),
       selectInput("department_select",
                   "Department",
@@ -79,7 +79,7 @@ ui <- fluidPage(
 server <- function(input, output, session = session) {
   loadAccount <- reactive({
     # Build API Query with proper encodes
-    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
+    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27") #%20AND20%22amount%22%20%3E=%20%27", input$amount_select[1], "%27%20AND%20%22amount%22%20%3C=%20%27", input$amount_select[2], "%27")
     
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
@@ -99,8 +99,7 @@ server <- function(input, output, session = session) {
     # draw plot
     ggplot(table, aes(x = date, y = count)) +
       geom_point(colour = "#ca0020") +
-      geom_line(colour = "#0571b0") +
-      geom_smooth(colour = "#ffffbf")
+      geom_line(colour = "#0571b0") 
   })
   output$barChart <- renderPlotly({
     dataAccount <- loadAccount()
