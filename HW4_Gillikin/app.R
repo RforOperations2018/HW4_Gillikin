@@ -123,12 +123,12 @@ server <- function(input, output, session = session) {
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = date, y = count, fill = "red")) +
-      geom_area(stat = "identity")
+    ggplot(table, aes(x = date, y = count)) +
+      geom_hex()
   })
   # Datatable
   output$table <- DT::renderDataTable({
-    subset(loadAccount(), select = c(department_name, general_ledger_date, amount))
+    subset(loadAccount(), select = c(department_name, general_ledger_date, object_account_description, amount))
   })
   # Reset Selection of Data
   observeEvent(input$reset, {
