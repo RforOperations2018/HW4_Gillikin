@@ -42,6 +42,10 @@ ui <- fluidPage(
                   "Department",
                   choices = departments,
                   selected = "DPW-Operations"),
+      selectInput("department_select2",
+                  "Department2",
+                  choices = departments,
+                  selected = "DPS-Police"),
       sliderInput("amount_select",
                   "Amount:",
                   min = -500,
@@ -54,16 +58,13 @@ ui <- fluidPage(
     # Tabset Main Panel
     mainPanel(
       tabsetPanel(
-        # TBD
         tabPanel("Line Plot",
                  plotlyOutput("linePlot")),
-        # TBD
         tabPanel("Bar Chart",
-                 plotlyOutput("barChart")),
-        # TBD
-        tabPanel("Scatter Plot",
-                 plotlyOutput("scatterPlot")),
-        # Data Table
+                 plotlyOutput("barChart"),
+                 plotlyOutput("barChart2")),
+        tabPanel("Hex Plot",
+                 plotlyOutput("hexPlot")),
         tabPanel("Table",
                  inputPanel(
                    downloadButton("downloadData","Download Revenue/Expense Data")
@@ -84,7 +85,8 @@ server <- function(input, output, session = session) {
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date),
-             object_account_number = ifelse(object_account_number == 54201, "Maintenance", "Other"))
+             object_account_number = ifelse(object_account_number == 54201, "Maintenance", (ifelse(object_account_number == 56151, "Operational Supplies", (ifelse(object_account_number == 56101, "Office Supplies", (ifelse(object_account_number == 54601, "Electric", (ifelse(object_account_number == 56351, "Tools", "Other"))))))))),
+             fund_number = ifelse(fund_number == 11101, "General Fund", "Other"))
 
     return(dataAccount)
   })
@@ -113,7 +115,19 @@ server <- function(input, output, session = session) {
     ggplot(table, aes(x = object_account_number , y = count, fill = object_account_number)) +
       geom_bar(stat = "identity")
   })
-  output$scatterPlot <- renderPlotly({
+  output$barChart2 <- renderPlotly({
+    dataAccount <- loadAccount()
+    
+    # shape the data for chart
+    table <- dataAccount %>%
+      group_by(fund_number) %>%
+      summarise(count = n())
+    
+    # draw plot
+    ggplot(table, aes(x = fund_number , y = count, fill = fund_number)) +
+      geom_bar(stat = "identity")
+  })
+  output$hexPlot <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
