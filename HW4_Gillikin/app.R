@@ -36,7 +36,7 @@ ui <- fluidPage(
     sidebarPanel(
       dateRangeInput("dates",
                      "Dates",
-                     start = Sys.Date()-90,
+                     start = Sys.Date()-14,
                      end = Sys.Date()),
       selectInput("department_select",
                   "Department",
@@ -84,7 +84,7 @@ server <- function(input, output, session = session) {
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date),
-             object_account_description = ifelse(object_account_description == "TOOLS", "Closed", "Open"))
+             object_account_number = ifelse(object_account_number == 54201, "Maintenance", "Other"))
     
     return(dataAccount)
   })
@@ -107,11 +107,11 @@ server <- function(input, output, session = session) {
     
     # shape the data for chart
     table <- dataAccount %>%
-      group_by(date) %>%
+      group_by(object_account_number ) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = date, y = count, fill = "blue")) +
+    ggplot(table, aes(x = object_account_number , y = count, fill = object_account_number)) +
       geom_bar(stat = "identity")
   })
   output$scatterPlot <- renderPlotly({
