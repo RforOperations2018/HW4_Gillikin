@@ -36,7 +36,7 @@ ui <- fluidPage(
     sidebarPanel(
       dateRangeInput("dates",
                      "Dates",
-                     start = Sys.Date()-30,
+                     start = Sys.Date()-90,
                      end = Sys.Date()),
       selectInput("department_select",
                   "Department",
@@ -58,11 +58,11 @@ ui <- fluidPage(
         tabPanel("Line Plot",
                  plotlyOutput("linePlot")),
         # TBD
-        tabPanel("Open/Closed",
+        tabPanel("Bar Chart",
                  plotlyOutput("barChart")),
         # TBD
-        tabPanel("Money",
-                 plotlyOutput("scatterChart")),
+        tabPanel("Scatter Plot",
+                 plotlyOutput("scatterPlot")),
         # Data Table
         tabPanel("Table",
                  inputPanel(
@@ -79,7 +79,7 @@ ui <- fluidPage(
 server <- function(input, output, session = session) {
   loadAccount <- reactive({
     # Build API Query with proper encodes
-    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27%20AND20%22amount%22%20%3E=%20%27", input$amount_select[1], "%27%20AND%20%22amount%22%20%3C=%20%27", input$amount_select[2], "%27")
+    url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20*%20FROM%20%22f61f6e8c-7b93-4df3-9935-4937899901c7%22%20WHERE%20%22general_ledger_date%22%20%3E=%20%27", input$dates[1], "%27%20AND%20%22general_ledger_date%22%20%3C=%20%27", input$dates[2], "%27%20AND%20%22department_name%22%20=%20%27", input$department_select, "%27")
     
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
@@ -107,24 +107,24 @@ server <- function(input, output, session = session) {
     
     # shape the data for chart
     table <- dataAccount %>%
-      group_by(object_account_description) %>%
+      group_by(date) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = object_account_description, y = count, fill = object_account_description)) +
+    ggplot(table, aes(x = date, y = count, fill = "blue")) +
       geom_bar(stat = "identity")
   })
-  output$scatterChart <- renderPlotly({
+  output$scatterPlot <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
     table <- dataAccount %>%
-      group_by(object_account_description) %>%
+      group_by(date) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = object_account_description, y = count, fill = object_account_description)) +
-      geom_bar(stat = "identity")
+    ggplot(table, aes(x = date, y = count, fill = "red")) +
+      geom_area(stat = "identity")
   })
   # Datatable
   output$table <- DT::renderDataTable({
