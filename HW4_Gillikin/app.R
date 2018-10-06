@@ -6,6 +6,8 @@ library(jsonlite)
 library(plotly)
 library(htmltools)
 
+options(scipen = 999)
+
 ckanSQL <- function(url) {
   # Make the Request
   r <- RETRY("GET", URLencode(url))
@@ -43,16 +45,10 @@ ui <- fluidPage(
                   choices = departments,
                   selected = "DPW-Operations"),
       selectInput("department_select2",
-                  "Department2",
+                  "Comparison Department",
                   choices = departments,
                   selected = "DPS-Police"),
-      sliderInput("amount_select",
-                  "Amount:",
-                  min = -500,
-                  max = 500,
-                  value = c(-500, 500)),
       actionButton("reset", "Reset Selection", icon = icon("refresh"))
-      
     ),
     
     # Tabset Main Panel
@@ -86,7 +82,8 @@ server <- function(input, output, session = session) {
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date),
              object_account_number = ifelse(object_account_number == 54201, "Maintenance", (ifelse(object_account_number == 56151, "Operational Supplies", (ifelse(object_account_number == 56101, "Office Supplies", (ifelse(object_account_number == 54601, "Electric", (ifelse(object_account_number == 56351, "Tools", "Other"))))))))),
-             fund_number = ifelse(fund_number == 11101, "General Fund", "Other"))
+             fund_number = ifelse(fund_number == 11101, "General Fund", "Other"),
+             amount = amount)
 
     return(dataAccount)
   })
@@ -94,12 +91,12 @@ server <- function(input, output, session = session) {
     dataAccount <- loadAccount()
     
     # shape the data for chart
-    table <- dataAccount %>%
+    dat <- dataAccount %>%
       group_by(date) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = date, y = count)) +
+    ggplot(dat, aes(x = date, y = count)) +
       geom_point(colour = "#ca0020") +
       geom_line(colour = "#0571b0") 
   })
@@ -107,36 +104,30 @@ server <- function(input, output, session = session) {
     dataAccount <- loadAccount()
     
     # shape the data for chart
-    table <- dataAccount %>%
+    dat <- dataAccount %>%
       group_by(object_account_number) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = object_account_number , y = count, fill = object_account_number)) +
+    ggplot(dat, aes(x = object_account_number , y = count, fill = object_account_number)) +
       geom_bar(stat = "identity")
   })
   output$barChart2 <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
-    table <- dataAccount %>%
+    dat <- dataAccount %>%
       group_by(fund_number) %>%
       summarise(count = n())
     
     # draw plot
-    ggplot(table, aes(x = fund_number , y = count, fill = fund_number)) +
+    ggplot(dat, aes(x = fund_number , y = count, fill = fund_number)) +
       geom_bar(stat = "identity")
   })
   output$hexPlot <- renderPlotly({
     dataAccount <- loadAccount()
-    
-    # shape the data for chart
-    table <- dataAccount %>%
-      group_by(date) %>%
-      summarise(count = n())
-    
     # draw plot
-    ggplot(table, aes(x = date, y = count)) +
+    ggplot(dataAccount, aes(x = date, y = abs(amount))) +
       geom_hex()
   })
   # Datatable
