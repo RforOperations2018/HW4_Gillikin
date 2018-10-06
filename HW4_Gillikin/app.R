@@ -52,7 +52,7 @@ ui <- fluidPage(
       selectInput("department_select2",
                   "Comparison Department",
                   choices = departments,
-                  selected = "DPS-Police"),
+                  selected = "DPS-Police"), #doesn't populate
       #action button to reset Department
       actionButton("reset", "Reset Selection", icon = icon("refresh"))
     ),
@@ -134,7 +134,7 @@ server <- function(input, output, session = session) {
     dataAccount <- loadAccount()
     # draw plot
     ggplot(dataAccount, aes(x = date, y = abs(amount))) +
-      geom_hex()
+      geom_point(colour = "#ca0020")
   })
   # Datatable
   output$table <- DT::renderDataTable({
