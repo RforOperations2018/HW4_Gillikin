@@ -31,35 +31,41 @@ departments <- sort(ckanUniques("f61f6e8c-7b93-4df3-9935-4937899901c7", "departm
 ui <- fluidPage(
   
   # Application title
-  titlePanel("Pittsburgh Revenues and Expenses"),
+  titlePanel("Pittsburgh City Department Expenses"),
   
   # Sidebar
   sidebarLayout(
     sidebarPanel(
+      #date input
       dateRangeInput("dates",
                      "Dates",
                      start = Sys.Date()-60,
                      end = Sys.Date()),
+      #deparment input
+      #only some workl many throw errors for unknown reason
       selectInput("department_select",
                   "Department",
                   choices = departments,
                   selected = "DPW-Operations"),
+      #Turning on multiple = TRUE threw an error, so I wanted to make it compare to one other department
+      #I wasn't able to figure out how to have this second option
       selectInput("department_select2",
                   "Comparison Department",
                   choices = departments,
                   selected = "DPS-Police"),
+      #action button to reset Department
       actionButton("reset", "Reset Selection", icon = icon("refresh"))
     ),
     
     # Tabset Main Panel
     mainPanel(
       tabsetPanel(
-        tabPanel("Line Plot",
+        tabPanel("Instances",
                  plotlyOutput("linePlot")),
-        tabPanel("Bar Chart",
+        tabPanel("Type & Fund",
                  plotlyOutput("barChart"),
                  plotlyOutput("barChart2")),
-        tabPanel("Hex Plot",
+        tabPanel("Amount",
                  plotlyOutput("hexPlot")),
         tabPanel("Table",
                  inputPanel(
