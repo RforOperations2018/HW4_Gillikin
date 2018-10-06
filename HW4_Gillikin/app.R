@@ -6,6 +6,7 @@ library(jsonlite)
 library(plotly)
 library(htmltools)
 
+#turn scientific notation into normal numbers
 options(scipen = 999)
 
 ckanSQL <- function(url) {
