@@ -84,8 +84,7 @@ server <- function(input, output, session = session) {
     # Load and clean data
     dataAccount <- ckanSQL(url) %>%
       mutate(date = as.Date(general_ledger_date),
-             object_account_number = ifelse(object_account_number == 54201, "Maintenance", "Other")) #%>%
-      #filter(amount >= input$amount[1] & amount <= input$amount[2])
+             object_account_number = ifelse(object_account_number == 54201, "Maintenance", "Other"))
 
     return(dataAccount)
   })
@@ -99,16 +98,16 @@ server <- function(input, output, session = session) {
     
     # draw plot
     ggplot(table, aes(x = date, y = count)) +
-      geom_point(colour = "#d95f02") +
-      geom_line(colour = "#d95f02") +
-      geom_smooth()
+      geom_point(colour = "#ca0020") +
+      geom_line(colour = "#0571b0") +
+      geom_smooth(colour = "#ffffbf")
   })
   output$barChart <- renderPlotly({
     dataAccount <- loadAccount()
     
     # shape the data for chart
     table <- dataAccount %>%
-      group_by(object_account_number ) %>%
+      group_by(object_account_number) %>%
       summarise(count = n())
     
     # draw plot
